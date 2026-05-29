@@ -67,10 +67,23 @@ benchmark: ## Run inference benchmark (100 seq + 100 concurrent)
 	$(PYTHON) -m inference.benchmark --url http://localhost:8001
 
 lint: ## Run linting checks
-	$(PYTHON) -m py_compile gateway/gateway.py
-	$(PYTHON) -m py_compile router/classifier.py
-	$(PYTHON) -m py_compile inference/server.py
-	@echo "✅ All modules compile successfully"
+	$(PYTHON) -m ruff check gateway/ inference/ schemas/ router/ core/ data_pipeline/ evaluation/ feedback_loop/ training/ apps/
+	@echo "✅ Linting passed"
+
+lint-fix: ## Auto-fix linting issues
+	$(PYTHON) -m ruff check --fix gateway/ inference/ schemas/ router/ core/ data_pipeline/ evaluation/ feedback_loop/ training/ apps/
+	@echo "✅ Linting issues fixed"
+
+typecheck: ## Run type checking
+	$(PYTHON) -m mypy gateway/ inference/ schemas/ --ignore-missing-imports --no-strict-optional
+	@echo "✅ Type checking passed"
+
+security: ## Run security scan
+	$(PYTHON) -m bandit -r gateway/ inference/ schemas/ router/ core/ -ll
+	@echo "✅ Security scan complete"
+
+ci-checks: lint typecheck test security ## Run all CI checks locally
+	@echo "✅ All CI checks passed"
 
 synthetic-data: ## Generate synthetic training data
 	$(PYTHON) -m data_pipeline.synthetic_gen --count 50 --output data/synthetic/
