@@ -10,8 +10,11 @@ services:
     depends_on:
       inference:
         condition: service_healthy
+      analytics:
+        condition: service_healthy
     environment:
       - INFERENCE_URL=http://inference:8001
+      - ANALYTICS_URL=http://analytics:8002
     networks:
       - bharatdoc
 
@@ -31,6 +34,45 @@ services:
       timeout: 10s
       retries: 3
 
+  analytics:
+    build:
+      context: ../analytics
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://bharatdoc:bharatdoc@postgres:5432/bharatdoc
+    networks:
+      - bharatdoc
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8002/health', timeout=5.0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=bharatdoc
+      - POSTGRES_USER=bharatdoc
+      - POSTGRES_PASSWORD=bharatdoc
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../analytics/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - bharatdoc
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bharatdoc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -44,3 +86,7 @@ services:
 networks:
   bharatdoc:
     driver: bridge
+
+volumes:
+  postgres_data:
+
