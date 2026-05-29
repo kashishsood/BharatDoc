@@ -1,0 +1,11 @@
+{
+  "doc_type": "aadhaar",
+  "name": "Amit Patel",
+  "name_hindi": "कविता अय्यर",
+  "date_of_birth": "20/04/1988",
+  "gender": "FEMALE",
+  "aadhaar_number": "6798 8662 8538",
+  "address": "12/A, Gandhi Nagar, Pune - 411041",
+  "pincode": "108829",
+  "photo_present": true
+}

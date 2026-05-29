@@ -1,0 +1,28 @@
+# =============================================================
+# BharatDoc-VLM: A/B Testing Configuration
+# =============================================================
+# Controls traffic split between /predict/v1 and /predict/v2
+# =============================================================
+
+# Percentage of traffic routed to v2 (0-100)
+v2_traffic_percentage: 50
+
+# Model versions
+v1:
+  description: "Donut single-stage extraction"
+  model: "donut-base-lora"
+  status: "stable"
+
+v2:
+  description: "Two-stage: Donut + LLM corrector"
+  model: "donut-base-lora + phi-2-corrector"
+  status: "canary"
+
+# Rollout schedule
+rollout:
+  # Start with 10% v2, increase by 10% daily if error rate < 5%
+  initial_percentage: 10
+  increment: 10
+  max_percentage: 100
+  error_rate_threshold: 0.05
+  evaluation_window_hours: 24

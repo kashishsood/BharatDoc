@@ -1,0 +1,85 @@
+# =============================================================
+# BharatDoc-VLM: Routing Configuration
+# =============================================================
+# Maps each document type to its specialist model endpoint.
+# The gateway uses this config to route classified documents.
+#
+# Design: Each doc type maps to:
+#   - primary: preferred model endpoint (highest accuracy)
+#   - fallback: lighter model used when circuit breaker trips
+#   - model_name: HuggingFace model identifier for loading
+#   - why: rationale for model choice (for documentation)
+# =============================================================
+
+routing:
+  aadhaar:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "naver-clova-ix/donut-base"
+    model_type: "donut"
+    why: >
+      Aadhaar cards are printed forms with consistent layout.
+      Donut (Document Understanding Transformer) excels at structured
+      field extraction from printed documents without needing OCR.
+
+  invoice:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "microsoft/layoutlmv3-base"
+    model_type: "layoutlm"
+    why: >
+      Invoices contain dense tables with spatial relationships between
+      headers and values. LayoutLMv3 uses 2D position embeddings to
+      understand table structure, outperforming sequence-only models.
+
+  lic_policy:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "naver-clova-ix/donut-base"
+    model_type: "donut"
+    why: >
+      LIC policies are printed documents with semi-structured layouts.
+      Donut handles the mix of form fields and paragraph text well.
+      Fine-tuned with LoRA on synthetic LIC policy data.
+
+  handwritten_form:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "microsoft/trocr-base-handwritten"
+    model_type: "trocr"
+    why: >
+      Handwritten forms require specialised recognition. TrOCR is
+      pre-trained on handwriting datasets and handles cursive/mixed
+      scripts better than general OCR models.
+
+  printed_form:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "naver-clova-ix/donut-base"
+    model_type: "donut"
+    why: >
+      Printed government forms have consistent structure.
+      Donut handles these efficiently without OCR preprocessing.
+
+  table_doc:
+    primary: "http://inference:8001/predict/v2"
+    fallback: "http://inference:8001/predict/v1"
+    model_name: "microsoft/layoutlmv3-base"
+    model_type: "layoutlm"
+    why: >
+      Dense table documents require understanding of 2D spatial layout.
+      LayoutLMv3 with its vision + layout + text multimodal architecture
+      is the best choice for table-heavy documents.
+
+# Global routing settings
+settings:
+  # Timeout for model endpoint calls (seconds)
+  request_timeout: 10
+  # Maximum retries before falling back
+  max_retries: 2
+  # Whether to validate output against schema
+  validate_output: true
+  # Default doc type if classifier confidence < threshold
+  low_confidence_default: "printed_form"
+  # Confidence threshold below which to flag for human review
+  confidence_threshold: 0.6

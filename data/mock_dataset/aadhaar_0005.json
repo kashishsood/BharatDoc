@@ -1,0 +1,11 @@
+{
+  "doc_type": "aadhaar",
+  "name": "Priya Sharma",
+  "name_hindi": "अनन्या रेड्डी",
+  "date_of_birth": "06/01/1984",
+  "gender": "MALE",
+  "aadhaar_number": "5710 6357 1147",
+  "address": "Plot 67, Anna Nagar, Chennai - 600040",
+  "pincode": "359916",
+  "photo_present": true
+}

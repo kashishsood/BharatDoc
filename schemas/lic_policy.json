@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LIC Policy Extraction Schema",
+  "description": "Validated output schema for Life Insurance Corporation of India policy documents. Covers endowment, money-back, term, and ULIP plans.",
+  "type": "object",
+  "required": ["policy_number", "holder_name", "plan_name", "sum_assured", "premium_amount", "maturity_date"],
+  "properties": {
+    "policy_number": {
+      "type": "string",
+      "description": "LIC policy number (typically 8-10 digits)",
+      "pattern": "^\\d{8,10}$"
+    },
+    "holder_name": {
+      "type": "string",
+      "description": "Name of the policy holder",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "plan_name": {
+      "type": "string",
+      "description": "LIC plan name (e.g., Jeevan Anand, Jeevan Labh, New Endowment)",
+      "minLength": 3
+    },
+    "plan_number": {
+      "type": ["string", "null"],
+      "description": "LIC plan number (e.g., 815, 936)",
+      "pattern": "^\\d{3,4}$"
+    },
+    "sum_assured": {
+      "type": "number",
+      "description": "Sum assured amount in INR",
+      "minimum": 10000,
+      "maximum": 100000000
+    },
+    "premium_amount": {
+      "type": "number",
+      "description": "Premium amount per payment period in INR",
+      "minimum": 100,
+      "maximum": 10000000
+    },
+    "premium_frequency": {
+      "type": ["string", "null"],
+      "description": "Premium payment frequency",
+      "enum": ["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY", "SINGLE", null]
+    },
+    "policy_term_years": {
+      "type": ["integer", "null"],
+      "description": "Policy term in years",
+      "minimum": 5,
+      "maximum": 75
+    },
+    "premium_paying_term_years": {
+      "type": ["integer", "null"],
+      "description": "Premium paying term in years (may differ from policy term)",
+      "minimum": 1,
+      "maximum": 75
+    },
+    "commencement_date": {
+      "type": ["string", "null"],
+      "description": "Policy commencement date in DD/MM/YYYY format",
+      "pattern": "^\\d{2}/\\d{2}/\\d{4}$"
+    },
+    "maturity_date": {
+      "type": "string",
+      "description": "Policy maturity date in DD/MM/YYYY format",
+      "pattern": "^\\d{2}/\\d{2}/\\d{4}$"
+    },
+    "nominee_name": {
+      "type": ["string", "null"],
+      "description": "Name of the nominee"
+    },
+    "nominee_relationship": {
+      "type": ["string", "null"],
+      "description": "Relationship of nominee to policyholder",
+      "enum": ["SPOUSE", "CHILD", "PARENT", "SIBLING", "OTHER", null]
+    },
+    "branch_code": {
+      "type": ["string", "null"],
+      "description": "LIC branch code"
+    },
+    "rider_benefits": {
+      "type": ["array", "null"],
+      "description": "List of rider benefits attached to the policy",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rider_name": {"type": "string"},
+          "rider_sum_assured": {"type": "number"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

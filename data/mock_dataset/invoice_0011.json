@@ -1,0 +1,17 @@
+{
+  "doc_type": "invoice",
+  "invoice_number": "INV-2024-6684",
+  "vendor_name": "Deepak Joshi Enterprises",
+  "invoice_date": "26/02/2024",
+  "line_items": [
+    {
+      "description": "Service",
+      "quantity": 45,
+      "unit_price": 5398,
+      "amount": 242910
+    }
+  ],
+  "subtotal": 242910.0,
+  "total_tax": 43724.0,
+  "total_amount": 286634.0
+}

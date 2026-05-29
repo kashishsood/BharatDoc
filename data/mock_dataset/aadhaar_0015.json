@@ -1,0 +1,11 @@
+{
+  "doc_type": "aadhaar",
+  "name": "Kavita Iyer",
+  "name_hindi": "अनन्या रेड्डी",
+  "date_of_birth": "17/01/1987",
+  "gender": "FEMALE",
+  "aadhaar_number": "4982 9653 3811",
+  "address": "H.No 45, Sector 12, Dwarka, New Delhi - 110075",
+  "pincode": "913501",
+  "photo_present": true
+}

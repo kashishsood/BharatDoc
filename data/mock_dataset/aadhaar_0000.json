@@ -1,0 +1,11 @@
+{
+  "doc_type": "aadhaar",
+  "name": "Arjun Verma",
+  "name_hindi": "स्नेहा गुप्ता",
+  "date_of_birth": "09/11/1973",
+  "gender": "MALE",
+  "aadhaar_number": "6480 7449 3475",
+  "address": "12/A, Gandhi Nagar, Pune - 411041",
+  "pincode": "878493",
+  "photo_present": true
+}

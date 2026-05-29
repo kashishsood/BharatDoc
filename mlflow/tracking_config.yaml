@@ -1,0 +1,36 @@
+# =============================================================
+# BharatDoc-VLM: MLflow Tracking Configuration
+# =============================================================
+
+tracking:
+  tracking_uri: "mlruns"  # Local MLflow tracking directory
+  experiment_name: "bharatdoc-vlm"
+  
+  # Model registry
+  registry:
+    model_name: "bharatdoc-vlm-production"
+    stages: ["staging", "production", "archived"]
+    
+  # Auto-logging
+  autolog:
+    log_models: true
+    log_input_examples: false  # Skip for privacy (document images)
+    log_model_signatures: true
+    
+  # Artifact storage
+  artifacts:
+    artifact_location: "mlruns/artifacts"
+    
+  # Tags applied to all runs
+  default_tags:
+    project: "bharatdoc-vlm"
+    team: "applied-ai"
+    framework: "pytorch"
+    
+  # Metrics to track
+  metrics:
+    - "field_f1"
+    - "document_accuracy"
+    - "ece"
+    - "latency_p95"
+    - "model_size_mb"

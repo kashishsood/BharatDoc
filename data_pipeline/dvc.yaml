@@ -1,0 +1,41 @@
+# =============================================================
+# BharatDoc-VLM: DVC Pipeline Configuration
+# =============================================================
+# Tracks data/ directory and defines reproducible pipeline stages.
+# Push to local remote: data/dvc_remote/
+# Usage: dvc repro  (runs all stages in dependency order)
+# =============================================================
+
+stages:
+  collect:
+    cmd: python -m data_pipeline.collect --output data/ --num-samples 100
+    deps:
+      - data_pipeline/collect.py
+    outs:
+      - data/mock_dataset/
+
+  synthesize:
+    cmd: python -m data_pipeline.synthetic_gen --count 50 --output data/synthetic/
+    deps:
+      - data_pipeline/synthetic_gen.py
+    outs:
+      - data/synthetic/
+
+  augment:
+    cmd: python -c "from data_pipeline.augment import augment_dataset; from pathlib import Path; augment_dataset(Path('data/synthetic'), Path('data/augmented'), 3)"
+    deps:
+      - data_pipeline/augment.py
+      - data/synthetic/
+    outs:
+      - data/augmented/
+
+  quality_filter:
+    cmd: python -c "from data_pipeline.quality_filter import filter_dataset; from pathlib import Path; filter_dataset(list(Path('data/augmented').glob('*.png')))"
+    deps:
+      - data_pipeline/quality_filter.py
+      - data/augmented/
+
+  deduplicate:
+    cmd: python -c "from data_pipeline.deduplicate import DocumentDeduplicator; print('Deduplication stage - run via API')"
+    deps:
+      - data_pipeline/deduplicate.py

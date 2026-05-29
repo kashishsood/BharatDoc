@@ -1,0 +1,17 @@
+{
+  "doc_type": "invoice",
+  "invoice_number": "INV-2024-1932",
+  "vendor_name": "Priya Sharma Enterprises",
+  "invoice_date": "22/03/2024",
+  "line_items": [
+    {
+      "description": "Service",
+      "quantity": 29,
+      "unit_price": 2474,
+      "amount": 71746
+    }
+  ],
+  "subtotal": 71746.0,
+  "total_tax": 12914.0,
+  "total_amount": 84660.0
+}

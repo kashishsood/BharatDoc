@@ -1,0 +1,17 @@
+{
+  "doc_type": "invoice",
+  "invoice_number": "INV-2024-2519",
+  "vendor_name": "Vikram Singh Enterprises",
+  "invoice_date": "16/08/2024",
+  "line_items": [
+    {
+      "description": "Service",
+      "quantity": 33,
+      "unit_price": 1078,
+      "amount": 35574
+    }
+  ],
+  "subtotal": 35574.0,
+  "total_tax": 6403.0,
+  "total_amount": 41977.0
+}

@@ -1,0 +1,162 @@
+[
+  {
+    "id": "aadhaar_0000",
+    "doc_type": "aadhaar",
+    "image_path": "aadhaar_0000.png",
+    "gt_path": "aadhaar_0000.json",
+    "language": "english",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "invoice_0001",
+    "doc_type": "invoice",
+    "image_path": "invoice_0001.png",
+    "gt_path": "invoice_0001.json",
+    "language": "mixed",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "lic_policy_0002",
+    "doc_type": "lic_policy",
+    "image_path": "lic_policy_0002.png",
+    "gt_path": "lic_policy_0002.json",
+    "language": "hindi",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "handwritten_form_0003",
+    "doc_type": "handwritten_form",
+    "image_path": "handwritten_form_0003.png",
+    "gt_path": "handwritten_form_0003.json",
+    "language": "english",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "printed_form_0004",
+    "doc_type": "printed_form",
+    "image_path": "printed_form_0004.png",
+    "gt_path": "printed_form_0004.json",
+    "language": "hindi",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "aadhaar_0005",
+    "doc_type": "aadhaar",
+    "image_path": "aadhaar_0005.png",
+    "gt_path": "aadhaar_0005.json",
+    "language": "hindi",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "invoice_0006",
+    "doc_type": "invoice",
+    "image_path": "invoice_0006.png",
+    "gt_path": "invoice_0006.json",
+    "language": "hindi",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "lic_policy_0007",
+    "doc_type": "lic_policy",
+    "image_path": "lic_policy_0007.png",
+    "gt_path": "lic_policy_0007.json",
+    "language": "mixed",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "handwritten_form_0008",
+    "doc_type": "handwritten_form",
+    "image_path": "handwritten_form_0008.png",
+    "gt_path": "handwritten_form_0008.json",
+    "language": "mixed",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "printed_form_0009",
+    "doc_type": "printed_form",
+    "image_path": "printed_form_0009.png",
+    "gt_path": "printed_form_0009.json",
+    "language": "mixed",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "aadhaar_0010",
+    "doc_type": "aadhaar",
+    "image_path": "aadhaar_0010.png",
+    "gt_path": "aadhaar_0010.json",
+    "language": "hindi",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "invoice_0011",
+    "doc_type": "invoice",
+    "image_path": "invoice_0011.png",
+    "gt_path": "invoice_0011.json",
+    "language": "mixed",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "lic_policy_0012",
+    "doc_type": "lic_policy",
+    "image_path": "lic_policy_0012.png",
+    "gt_path": "lic_policy_0012.json",
+    "language": "mixed",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "handwritten_form_0013",
+    "doc_type": "handwritten_form",
+    "image_path": "handwritten_form_0013.png",
+    "gt_path": "handwritten_form_0013.json",
+    "language": "english",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "printed_form_0014",
+    "doc_type": "printed_form",
+    "image_path": "printed_form_0014.png",
+    "gt_path": "printed_form_0014.json",
+    "language": "english",
+    "scan_quality": "noisy"
+  },
+  {
+    "id": "aadhaar_0015",
+    "doc_type": "aadhaar",
+    "image_path": "aadhaar_0015.png",
+    "gt_path": "aadhaar_0015.json",
+    "language": "hindi",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "invoice_0016",
+    "doc_type": "invoice",
+    "image_path": "invoice_0016.png",
+    "gt_path": "invoice_0016.json",
+    "language": "hindi",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "lic_policy_0017",
+    "doc_type": "lic_policy",
+    "image_path": "lic_policy_0017.png",
+    "gt_path": "lic_policy_0017.json",
+    "language": "mixed",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "handwritten_form_0018",
+    "doc_type": "handwritten_form",
+    "image_path": "handwritten_form_0018.png",
+    "gt_path": "handwritten_form_0018.json",
+    "language": "english",
+    "scan_quality": "clean"
+  },
+  {
+    "id": "printed_form_0019",
+    "doc_type": "printed_form",
+    "image_path": "printed_form_0019.png",
+    "gt_path": "printed_form_0019.json",
+    "language": "mixed",
+    "scan_quality": "noisy"
+  }
+]

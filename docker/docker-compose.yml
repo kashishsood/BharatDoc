@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      inference:
+        condition: service_healthy
+    environment:
+      - INFERENCE_URL=http://inference:8001
+    networks:
+      - bharatdoc
+
+  inference:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.inference
+    ports:
+      - "8001:8001"
+    environment:
+      - MOCK_MODE=true
+    networks:
+      - bharatdoc
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/alerting_rules.yaml:/etc/prometheus/rules.yaml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - bharatdoc
+
+networks:
+  bharatdoc:
+    driver: bridge

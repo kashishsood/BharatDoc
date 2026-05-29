@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Aadhaar Card Extraction Schema",
+  "description": "Validated output schema for Aadhaar card document extraction. Covers standard UIDAI Aadhaar cards including both English and Hindi fields.",
+  "type": "object",
+  "required": ["name", "date_of_birth", "gender", "aadhaar_number"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Full name as printed on Aadhaar card",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "name_hindi": {
+      "type": ["string", "null"],
+      "description": "Name in Hindi/Devanagari script if present"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "description": "Date of birth in DD/MM/YYYY format",
+      "pattern": "^\\d{2}/\\d{2}/\\d{4}$"
+    },
+    "gender": {
+      "type": "string",
+      "description": "Gender as printed on Aadhaar",
+      "enum": ["MALE", "FEMALE", "TRANSGENDER", "पुरुष", "महिला", "ट्रांसजेंडर"]
+    },
+    "aadhaar_number": {
+      "type": "string",
+      "description": "12-digit Aadhaar number (may include spaces: XXXX XXXX XXXX)",
+      "pattern": "^\\d{4}\\s?\\d{4}\\s?\\d{4}$"
+    },
+    "address": {
+      "type": ["string", "null"],
+      "description": "Full address as printed on Aadhaar card",
+      "maxLength": 500
+    },
+    "pincode": {
+      "type": ["string", "null"],
+      "description": "6-digit Indian PIN code",
+      "pattern": "^\\d{6}$"
+    },
+    "photo_present": {
+      "type": "boolean",
+      "description": "Whether a photograph region was detected on the card",
+      "default": true
+    },
+    "vid": {
+      "type": ["string", "null"],
+      "description": "Virtual ID (16-digit) if present on newer Aadhaar cards",
+      "pattern": "^\\d{16}$"
+    },
+    "issue_date": {
+      "type": ["string", "null"],
+      "description": "Card issue/download date if visible",
+      "pattern": "^\\d{2}/\\d{2}/\\d{4}$"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,17 @@
+{
+  "doc_type": "invoice",
+  "invoice_number": "INV-2024-3777",
+  "vendor_name": "Ananya Reddy Enterprises",
+  "invoice_date": "27/09/2024",
+  "line_items": [
+    {
+      "description": "Service",
+      "quantity": 41,
+      "unit_price": 2226,
+      "amount": 91266
+    }
+  ],
+  "subtotal": 91266.0,
+  "total_tax": 16428.0,
+  "total_amount": 107694.0
+}

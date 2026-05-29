@@ -1,0 +1,110 @@
+# =============================================================
+# BharatDoc-VLM: Central Training Configuration
+# =============================================================
+# ALL hyperparameters, model choices, and paths live here.
+# No hardcoded values anywhere in training code.
+# =============================================================
+
+project:
+  name: "bharatdoc-vlm"
+  version: "1.0.0"
+  seed: 42
+
+# --- Model Settings ---
+models:
+  donut:
+    name: "naver-clova-ix/donut-base"
+    use_real_model: false  # Set true when GPU + weights available
+    task: "printed_form_extraction"
+    max_length: 512
+    image_size: [720, 960]
+
+  trocr:
+    name: "microsoft/trocr-base-handwritten"
+    use_real_model: false
+    task: "handwritten_recognition"
+    max_length: 256
+    image_size: [384, 384]
+
+  layoutlm:
+    name: "microsoft/layoutlmv3-base"
+    use_real_model: false
+    task: "table_extraction"
+    max_length: 512
+    image_size: [224, 224]
+
+  llava:
+    name: "llava-hf/llava-1.5-7b-hf"
+    use_real_model: false  # Heavy model — always mock unless explicitly enabled
+    task: "visual_qa"
+    max_length: 1024
+    image_size: [336, 336]
+
+  corrector_llm:
+    name: "microsoft/phi-2"
+    use_real_model: false
+    task: "ocr_correction"
+    max_length: 512
+
+# --- LoRA Configuration ---
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "v_proj"]
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# --- Training Hyperparameters ---
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_steps: 100
+  max_epochs: 10
+  max_steps: -1  # -1 means use max_epochs
+  fp16: true
+  gradient_checkpointing: true
+  eval_steps: 500
+  save_steps: 1000
+  logging_steps: 50
+  dataloader_num_workers: 4
+
+# --- Data Paths ---
+data:
+  train_dir: "data/mock_dataset"
+  val_dir: "data/mock_dataset"
+  test_dir: "data/mock_dataset"
+  manifest: "data/mock_dataset/manifest.json"
+  synthetic_dir: "data/synthetic"
+  augmented_dir: "data/augmented"
+
+# --- Checkpoint & Logging ---
+checkpoints:
+  output_dir: "checkpoints"
+  save_best: true
+  metric_for_best: "field_f1"
+  greater_is_better: true
+  max_checkpoints: 3
+
+logging:
+  use_wandb: false  # Set true when W&B configured
+  wandb_project: "bharatdoc-vlm"
+  wandb_entity: null
+  log_images_per_epoch: 5
+  use_mlflow: false
+  mlflow_tracking_uri: "mlruns"
+
+# --- Evaluation ---
+evaluation:
+  metrics: ["field_f1", "document_accuracy", "ece"]
+  confidence_threshold: 0.6
+  previous_run_metrics: "evaluation/last_run_metrics.json"
+  report_output_dir: "reports"
+
+# --- Two-Stage Pipeline ---
+two_stage:
+  stage1_model: "donut"  # OCR → structured JSON
+  stage2_model: "corrector_llm"  # LLM error correction
+  use_stage2: true

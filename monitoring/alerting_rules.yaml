@@ -1,0 +1,52 @@
+# =============================================================
+# BharatDoc-VLM: Prometheus Alerting Rules
+# =============================================================
+# Alerts fire when service health degrades.
+# =============================================================
+
+groups:
+  - name: bharatdoc_alerts
+    rules:
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, rate(request_latency_seconds_bucket[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency > 1s for BharatDoc inference"
+          description: "P95 latency is {{ $value }}s, exceeding 1s threshold for 2 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(requests_total{status="error"}[5m]) / rate(requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate > 5% for BharatDoc inference"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: LowConfidence
+        expr: avg(prediction_confidence) < 0.6
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Average prediction confidence below 0.6"
+          description: "Model confidence has dropped to {{ $value }}, indicating potential data drift."
+
+      - alert: CircuitBreakerTripped
+        expr: increase(requests_total{status="fallback"}[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Circuit breaker has tripped to fallback model"
+          description: "The inference server is using the fallback model due to high latency."
+
+      - alert: HighValidationErrors
+        expr: rate(validation_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Schema validation errors increasing"
+          description: "Validation error rate is {{ $value }}/s, indicating model output degradation."
