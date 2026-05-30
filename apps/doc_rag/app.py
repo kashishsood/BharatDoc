@@ -43,10 +43,10 @@ class DocumentRAG:
             from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L6-v2")
             self.use_real = True
-            st.success("✅ Loaded multilingual embedding model (CPU)")
-        except ImportError:
+            st.success("Loaded multilingual embedding model (CPU)")
+        except Exception as e:
             self.use_real = False
-            st.warning("⚠️ sentence-transformers not installed, using mock embeddings")
+            st.warning(f"Embedding model not available ({type(e).__name__}), using keyword search")
 
     def add_document(self, doc_id: str, text: str, metadata: dict = None):
         """Add a document to the corpus."""

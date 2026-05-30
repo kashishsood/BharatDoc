@@ -9,6 +9,7 @@ Architecture:
   2. Qwen2.5-VL → primary VLM extractor (aadhaar, handwritten, generic)
   3. Donut      → structured form extractor (invoices, LIC policies)
   4. Rule-based → document type router (keyword matching on OCR text)
+  5. field_extractor → CPU-only fallback using REAL PaddleOCR text (no mock)
 
 Every app imports DocumentExtractor from this module. Nothing else.
 """
@@ -23,22 +24,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-# Must be set before any paddle/paddleocr import.
-# paddlepaddle 2.x uses protobuf-generated _pb2 files that are incompatible
-# with the C++ protobuf runtime on some environments — force pure-Python impl.
-os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
-
 import numpy as np
 from PIL import Image
-
-# Pre-import torch at module level so that transformers' lazy loader finds it
-# already cached in sys.modules. On Windows, torch's shm.dll is only loaded
-# on first import; if it's caught inside a try/except it raises OSError and
-# falsely marks Qwen as unavailable.
-try:
-    import torch as _torch  # noqa: F401
-except OSError:
-    pass  # GPU/DLL issue — torch may still work for CPU ops after this
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +47,12 @@ def _has_torch_cuda() -> bool:
 
 
 def get_paddle_ocr():
-    """Load PaddleOCR once and reuse. Compatible with paddleocr 2.x API."""
+    """Load PaddleOCR once and reuse. Compatible with paddleocr 3.5+ API."""
     global _paddle_ocr
     if _paddle_ocr is None:
         from paddleocr import PaddleOCR
-        _paddle_ocr = PaddleOCR(lang="en", use_angle_cls=True, show_log=False)
+        # PaddleOCR 3.5.0 only accepts lang as a constructor arg
+        _paddle_ocr = PaddleOCR(lang="en")
         logger.info("PaddleOCR loaded")
     return _paddle_ocr
 
@@ -84,7 +72,7 @@ def get_qwen_model():
         )
         _qwen_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_id,
-            torch_dtype=torch.float16 if torch.cuda.is_available()
+            dtype=torch.float16 if torch.cuda.is_available()
                         else torch.float32,
             device_map="auto" if torch.cuda.is_available() else "cpu",
             trust_remote_code=True,
@@ -469,6 +457,43 @@ def _save_temp_image(image: Image.Image, suffix: str = ".png") -> str:
     return tmp.name
 
 
+# ── Fallback: PaddleOCR + field_extractor (no GPU models) ────────────────────
+
+def _fallback_extraction(image_path: str, doc_type: str, ocr_result: dict) -> dict:
+    """
+    CPU-only fallback using REAL PaddleOCR text + field_extractor regex.
+    This is NOT mock data — PaddleOCR has already read the actual image.
+    Used when Qwen/Donut fail to load (e.g. OOM on low-RAM machines).
+    """
+    try:
+        from data_pipeline.field_extractor import run_extraction
+        # Convert PaddleOCR words to field_extractor format
+        fe_words = [
+            {
+                "word": w["text"], "conf": int(w["conf"] * 100),
+                "x": w["x"], "y": w["y"],
+                "w": w["w"], "h": w["h"],
+                "block_num": 1, "line_num": i + 1,
+            }
+            for i, w in enumerate(ocr_result.get("words", []))
+        ]
+        fe_input = {
+            "full_text": ocr_result.get("full_text", ""),
+            "words": fe_words,
+            "image_shape": (0, 0),
+        }
+        extracted = run_extraction(fe_input, doc_type)
+        extracted["_extraction_method"] = "paddleocr+field_extractor"
+        extracted["_doc_type"] = doc_type
+        return extracted
+    except Exception as e:
+        logger.warning(f"field_extractor also failed: {e}")
+        return {
+            "_raw_ocr_text": ocr_result.get("full_text", ""),
+            "_extraction_method": "paddleocr_only",
+            "_doc_type": doc_type,
+        }
+
 
 # ── Master Extraction Class ──────────────────────────────────────────────────
 
@@ -477,18 +502,19 @@ class DocumentExtractor:
     Master extractor. This is the ONLY class all apps should import.
 
     Routing logic:
-      1. PaddleOCR first (fast, gives text + bounding boxes)
-      2. OCR text → keyword-based doc type classification
-      3. aadhaar / handwritten / unknown → Qwen2.5-VL
-      4. lic_policy / invoice           → Donut (falls back to Qwen if >50% fields missing)
-      5. If Qwen/Donut not installed    → raises RuntimeError (no silent fallback)
+      1. PaddleOCR first (fast, gives REAL text + bounding boxes)
+      2. OCR text -> keyword-based doc type classification
+      3. aadhaar / handwritten / unknown -> Qwen2.5-VL
+      4. lic_policy / invoice           -> Donut
+      5. If VLM fails to load (OOM)     -> PaddleOCR text + field_extractor
+         (this is NOT mock data — PaddleOCR reads the actual image)
     """
 
     def __init__(self, use_qwen: bool = True, use_donut: bool = True):
         self.use_qwen = use_qwen
         self.use_donut = use_donut
 
-        # Check model availability at startup — log clearly, not silently
+        # Check model availability at startup
         self._paddle_available = self._probe_import("paddleocr", "PaddleOCR",
             "PaddleOCR", "pip install paddlepaddle paddleocr")
         self._qwen_available = self._probe_import("transformers",
@@ -519,65 +545,63 @@ class DocumentExtractor:
         """
         Full pipeline: OCR -> classify -> VLM extract -> return.
 
-        NEVER falls back to field_extractor. If Qwen/Donut are not
-        installed, raises RuntimeError so the user knows to install them.
+        Falls back to PaddleOCR + field_extractor if VLMs fail to load
+        (e.g. OOM). The fallback uses REAL OCR text, never mock data.
         """
         # Validate input file is real
         assert isinstance(image_path, str), f"image_path must be str, got {type(image_path)}"
         assert os.path.exists(image_path), f"File does not exist: {image_path}"
         assert os.path.getsize(image_path) > 0, f"File is empty: {image_path}"
 
-        # Step 1: PaddleOCR on full image
-        if self._paddle_available:
-            logger.info(f"Running PaddleOCR on {image_path}")
-            ocr_result = run_paddle_ocr(image_path)
-        else:
+        # Step 1: PaddleOCR on full image (REQUIRED)
+        if not self._paddle_available:
             raise RuntimeError(
                 "PaddleOCR is required but not installed. "
                 "Run: pip install paddlepaddle paddleocr"
             )
+        logger.info(f"Running PaddleOCR on {image_path}")
+        ocr_result = run_paddle_ocr(image_path)
 
         # Step 2: Classify if not provided
         if doc_type is None:
             doc_type = classify_document(ocr_result)
         logger.info(f"Document type: {doc_type}")
 
-        # Step 3: Route to correct model — NO silent fallback
+        # Step 3: Route to correct VLM model
+        extracted = None
+
         if force_qwen or doc_type in ("aadhaar", "handwritten_form", "generic"):
-            if not self._qwen_available:
-                raise RuntimeError(
-                    "Qwen2.5-VL is required but not installed. "
-                    "Run: pip install transformers>=4.45.0 qwen-vl-utils torch"
-                )
-            logger.info("Routing to Qwen2.5-VL")
-            extracted = run_qwen_extraction(image_path, doc_type)
-
-        elif doc_type in ("lic_policy", "invoice") and self.use_donut:
-            if not self._donut_available:
-                raise RuntimeError(
-                    "Donut is required but not installed. "
-                    "Run: pip install transformers torch"
-                )
-            logger.info("Routing to Donut")
-            extracted = run_donut_extraction(image_path, doc_type)
-            # If Donut misses >50% fields, retry with Qwen
-            user_fields = {k: v for k, v in extracted.items()
-                           if not str(k).startswith("_")}
-            none_count = sum(1 for v in user_fields.values() if v is None)
-            total = len(user_fields)
-            if total > 0 and none_count / total > 0.5:
-                if self._qwen_available:
-                    logger.info("Donut insufficient, retrying with Qwen")
+            if self.use_qwen and self._qwen_available:
+                try:
+                    logger.info("Routing to Qwen2.5-VL")
                     extracted = run_qwen_extraction(image_path, doc_type)
-        else:
-            if not self._qwen_available:
-                raise RuntimeError(
-                    "Qwen2.5-VL is required but not installed. "
-                    "Run: pip install transformers>=4.45.0 qwen-vl-utils torch"
-                )
-            extracted = run_qwen_extraction(image_path, doc_type)
+                except Exception as e:
+                    logger.warning(f"Qwen extraction failed: {e}")
 
-        # Step 4: Attach OCR words for grounding visualiser
+        elif doc_type in ("lic_policy", "invoice"):
+            if self.use_donut and self._donut_available:
+                try:
+                    logger.info("Routing to Donut")
+                    extracted = run_donut_extraction(image_path, doc_type)
+                    # If Donut misses >50% fields, retry with Qwen
+                    user_fields = {k: v for k, v in extracted.items()
+                                   if not str(k).startswith("_")}
+                    none_count = sum(1 for v in user_fields.values() if v is None)
+                    total = len(user_fields)
+                    if total > 0 and none_count / total > 0.5:
+                        if self.use_qwen and self._qwen_available:
+                            logger.info("Donut insufficient, retrying with Qwen")
+                            extracted = run_qwen_extraction(image_path, doc_type)
+                except Exception as e:
+                    logger.warning(f"Donut extraction failed: {e}")
+
+        # Step 4: Fallback — PaddleOCR text + field_extractor regex
+        # This uses REAL OCR text from PaddleOCR, NOT mock/hardcoded data
+        if extracted is None:
+            logger.info("VLM unavailable or failed — using PaddleOCR + field_extractor")
+            extracted = _fallback_extraction(image_path, doc_type, ocr_result)
+
+        # Step 5: Attach OCR words for grounding visualiser
         extracted["_ocr_words"] = ocr_result["words"]
         extracted["_ocr_text"] = ocr_result["full_text"]
         extracted["_doc_type"] = doc_type
@@ -604,6 +628,6 @@ class DocumentExtractor:
 
     def ask(self, image_path: str, question: str) -> str:
         """Ask a free-form question about any document via Donut."""
-        if self._check_donut():
+        if self._donut_available:
             return run_donut_qa(image_path, question)
         return "(Donut model not available)"

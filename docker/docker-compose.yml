@@ -83,6 +83,18 @@ services:
     networks:
       - bharatdoc
 
+  dashboard:
+    build:
+      context: ../apps/dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+      - analytics
+    networks:
+      - bharatdoc
+
 networks:
   bharatdoc:
     driver: bridge
