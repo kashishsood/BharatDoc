@@ -25,25 +25,36 @@ class MetricsCollector:
     def __init__(self):
         self._use_prometheus = False
         try:
-            from prometheus_client import Histogram, Gauge, Counter, start_http_server
+            from prometheus_client import Histogram, Gauge, Counter, start_http_server, REGISTRY
 
-            self.latency = Histogram(
+            # Use REGISTRY to avoid duplicate metric registration (e.g. with multiple workers)
+            def _get_or_create(metric_cls, name, *args, **kwargs):
+                """Return existing metric if already registered, else create new."""
+                if name in REGISTRY._names_to_collectors:
+                    return REGISTRY._names_to_collectors[name]
+                return metric_cls(name, *args, **kwargs)
+
+            self.latency = _get_or_create(
+                Histogram,
                 "request_latency_seconds",
                 "Request latency in seconds",
                 ["doc_type", "version"],
                 buckets=[0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0],
             )
-            self.confidence = Gauge(
+            self.confidence = _get_or_create(
+                Gauge,
                 "prediction_confidence",
                 "Model prediction confidence score",
                 ["doc_type"],
             )
-            self.requests_total = Counter(
+            self.requests_total = _get_or_create(
+                Counter,
                 "requests_total",
                 "Total requests by doc type",
                 ["doc_type", "status"],
             )
-            self.validation_errors = Counter(
+            self.validation_errors = _get_or_create(
+                Counter,
                 "validation_errors_total",
                 "Total schema validation errors",
                 ["doc_type"],
