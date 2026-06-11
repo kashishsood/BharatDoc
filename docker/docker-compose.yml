@@ -28,11 +28,7 @@ services:
       - MOCK_MODE=true
     networks:
       - bharatdoc
-    healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # Healthcheck is defined in Dockerfile.inference
 
   analytics:
     build:

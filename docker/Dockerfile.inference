@@ -1,27 +1,70 @@
-FROM python:3.10-slim
+# Multi-stage production Dockerfile for BharatDoc inference service
+# Stage 1: Build dependencies
+# Stage 2: Minimal production image with non-root user
 
-WORKDIR /app
+# ============================================
+# Stage 1: Builder
+# ============================================
+FROM python:3.11-slim AS builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libglib2.0-0 tesseract-ocr \
+# Set working directory for build
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements and install to user directory
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ============================================
+# Stage 2: Production
+# ============================================
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install runtime dependencies (curl for healthcheck)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder stage
+COPY --from=builder /root/.local /root/.local
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Copy application code
 COPY inference/ ./inference/
 COPY schemas/ ./schemas/
-COPY router/ ./router/
-COPY monitoring/ ./monitoring/
-COPY training/config.yaml ./training/config.yaml
+COPY core/ ./core/
 
+# Set ownership for application files
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Set environment variables
+ENV PATH=/root/.local/bin:$PATH \
+    PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Expose inference service port
 EXPOSE 8001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8001/health')"
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8001/health || exit 1
 
-CMD ["python", "-m", "inference.server", "--mock", "--port", "8001", "--host", "0.0.0.0"]
+# Run the inference service
+CMD ["uvicorn", "inference.main:app", "--host", "0.0.0.0", "--port", "8001"]
