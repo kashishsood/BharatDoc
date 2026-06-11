@@ -1,41 +1,52 @@
-import { useState, useEffect, useCallback } from 'react';
-
-interface UseFetchResult<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
-}
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 export function useFetch<T>(
   fetchFn: () => Promise<T>,
-  deps: any[] = []
-): UseFetchResult<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const executeFetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchFn();
-      setData(result);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching data');
-      console.error('Fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchFn]);
-
-  useEffect(() => {
-    executeFetch();
-  }, [executeFetch, ...deps]);
+  deps: unknown[] = []
+) {
+  const [data, setData] = useState<T | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refetchCounter, setRefetchCounter] = useState(0)
+  const isMountedRef = useRef(true)
 
   const refetch = useCallback(() => {
-    executeFetch();
-  }, [executeFetch]);
+    setRefetchCounter(prev => prev + 1)
+  }, [])
 
-  return { data, loading, error, refetch };
+  useEffect(() => {
+    isMountedRef.current = true
+    let cancelled = false
+
+    const fetch = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const result = await fetchFn()
+        
+        if (!cancelled && isMountedRef.current) {
+          setData(result)
+          setError(null)
+        }
+      } catch (err) {
+        if (!cancelled && isMountedRef.current) {
+          setError(err instanceof Error ? err.message : 'Unknown error')
+          setData(null)
+        }
+      } finally {
+        if (!cancelled && isMountedRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetch()
+
+    return () => {
+      cancelled = true
+      isMountedRef.current = false
+    }
+  }, [...deps, refetchCounter])
+
+  return { data, loading, error, refetch }
 }

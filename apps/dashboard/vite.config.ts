@@ -9,7 +9,7 @@ export default defineConfig({
       '/api/analytics': {
         target: 'http://localhost:8002',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/analytics/, '/analytics')
+        rewrite: (path) => path.replace(/^\/api\/analytics/, '')
       },
       '/api/gateway': {
         target: 'http://localhost:8000',

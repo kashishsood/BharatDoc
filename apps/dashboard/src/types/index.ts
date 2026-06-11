@@ -1,45 +1,48 @@
 export interface AnalyticsOverview {
-  total_extractions: number;
-  avg_f1_score: number;
-  avg_latency_ms: number;
-  best_model: string;
-  worst_document_type: string;
-  total_errors: number;
+  total_extractions: number
+  avg_f1_score: number
+  avg_latency_ms: number
+  best_model: string
+  worst_document_type: string
+  total_errors: number
 }
 
 export interface DailyStats {
-  date: string;
-  count: number;
-  avg_f1: number;
-  avg_latency: number;
+  date: string
+  count: number
+  avg_f1: number
+  avg_latency: number
 }
 
 export interface ModelComparison {
-  model_used: string;
-  document_type: string;
-  avg_f1: number;
-  avg_latency: number;
-  total: number;
-  rank_in_doc_type: number;
+  model_used: string
+  document_type: string
+  avg_f1: number
+  avg_latency: number
+  total: number
+  rank_in_doc_type: number
 }
 
 export interface FieldError {
-  field_name: string;
-  error_type: string;
-  count: number;
-  error_pct: number;
+  field_name: string
+  error_type: string
+  count: number
+  error_pct: number
+  document_type: string
 }
 
 export interface LatencyTrend {
-  model_used: string;
-  hour: string;
-  avg_latency_ms: number;
+  model_used: string
+  hour: string
+  avg_latency_ms: number
+  request_count: number
 }
 
 export interface ExtractionResult {
-  document_type: string;
-  model_used: string;
-  confidence_score: number;
-  latency_ms: number;
-  extracted_fields: Record<string, string | number>;
+  document_type: string
+  model_used: string
+  confidence_score: number
+  latency_ms: number
+  extracted_fields: Record<string, string | number>
+  validation_errors: string[]
 }

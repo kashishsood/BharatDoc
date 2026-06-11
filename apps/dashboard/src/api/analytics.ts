@@ -1,44 +1,23 @@
-import axios from 'axios';
-import type {
-  AnalyticsOverview,
-  DailyStats,
-  ModelComparison,
-  FieldError,
-  LatencyTrend
-} from '../types';
+import axios from 'axios'
+import type { AnalyticsOverview, DailyStats, ModelComparison, FieldError, LatencyTrend } from '../types'
 
-const api = axios.create({
-  baseURL: '/api/analytics',
-  timeout: 30000,
-});
+const BASE = '/api/analytics'
 
-export const getOverview = async (): Promise<AnalyticsOverview> => {
-  const response = await api.get<AnalyticsOverview>('/overview');
-  return response.data;
-};
+export const analyticsApi = {
+  getOverview: (): Promise<AnalyticsOverview> =>
+    axios.get(`${BASE}/analytics/overview`).then(r => r.data),
 
-export const getDailyStats = async (days: number = 30): Promise<DailyStats[]> => {
-  const response = await api.get<DailyStats[]>('/daily', {
-    params: { days }
-  });
-  return response.data;
-};
+  getDailyStats: (days = 30): Promise<DailyStats[]> =>
+    axios.get(`${BASE}/analytics/daily`, { params: { days } }).then(r => r.data),
 
-export const getModelComparison = async (): Promise<ModelComparison[]> => {
-  const response = await api.get<ModelComparison[]>('/model-comparison');
-  return response.data;
-};
+  getModelComparison: (): Promise<ModelComparison[]> =>
+    axios.get(`${BASE}/analytics/model-comparison`).then(r => r.data),
 
-export const getFieldErrors = async (documentType: string = 'all'): Promise<FieldError[]> => {
-  const response = await api.get<FieldError[]>('/field-errors', {
-    params: { document_type: documentType }
-  });
-  return response.data;
-};
+  getFieldErrors: (documentType = 'all', limit = 20): Promise<FieldError[]> =>
+    axios.get(`${BASE}/analytics/field-errors`, { 
+      params: { document_type: documentType, limit } 
+    }).then(r => r.data),
 
-export const getLatencyTrend = async (days: number = 7): Promise<LatencyTrend[]> => {
-  const response = await api.get<LatencyTrend[]>('/latency-trend', {
-    params: { days }
-  });
-  return response.data;
-};
+  getLatencyTrend: (days = 7): Promise<LatencyTrend[]> =>
+    axios.get(`${BASE}/analytics/latency-trend`, { params: { days } }).then(r => r.data),
+}
