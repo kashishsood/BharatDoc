@@ -9,7 +9,7 @@ import type {
 
 const api = axios.create({
   baseURL: '/api/analytics',
-  timeout: 10000,
+  timeout: 30000,
 });
 
 export const getOverview = async (): Promise<AnalyticsOverview> => {
